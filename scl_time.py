@@ -4,6 +4,9 @@ from pytz import utc as utc_tz
 
 __author__ = 'Scott Lessans'
 
+DATE_TIME_MIN = datetime.max.astimezone(tz=utc_tz)
+DATE_TIME_MAX = datetime.max.astimezone(tz=utc_tz)
+
 
 def beginning_of_day(dt: datetime) -> datetime:
     """
@@ -127,6 +130,13 @@ class DateTimeInterval(object):
         # according to python 3 docs https://docs.python.org/3.4/library/datetime.html:
         # "Objects of these types are immutable." (referring to datetime among others)
         # so we don't have to copy or worry about them changing on us
+
+        if not start:
+            start = DATE_TIME_MIN
+
+        if not end:
+            end = DATE_TIME_MAX
+
         _check_valid_aware_datetime(start)
         _check_valid_aware_datetime(end)
 
@@ -142,6 +152,18 @@ class DateTimeInterval(object):
         return cls(start, start + diff)
 
     @property
+    def is_start_infinite(self):
+        return self.start == DATE_TIME_MIN
+
+    @property
+    def is_end_infinite(self):
+        return self.end == DATE_TIME_MAX
+
+    @property
+    def is_infinite(self):
+        return self.is_start_infinite or self.is_end_infinite
+
+    @property
     def start(self) -> datetime:
         return self._start
 
@@ -151,6 +173,8 @@ class DateTimeInterval(object):
 
     @property
     def length(self) -> timedelta:
+        if self.is_infinite:
+            return None
         return self.end - self.start
 
     def contains(self, dt: datetime) -> bool:
@@ -221,18 +245,25 @@ class DateTimeInterval(object):
         return self.debug_str(False)
 
     def debug_str(self, convert_to_utc=True):
-        if convert_to_utc:
-            start = self.start.astimezone(utc_tz)
-            end = self.end.astimezone(utc_tz)
+        if self.is_start_infinite:
+            start = '-inf'
         else:
-            start = self.start
-            end = self.end
-        return "<%s: [%s, %s)>" % (type(self), start.isoformat(' '), end.isoformat(' '),)
+            start = (self.start.astimezone(utc_tz) if convert_to_utc else self.start).isoformat(' ')
+
+        if self.is_end_infinite:
+            end = '+inf'
+        else:
+            end = (self.end.astimezone(utc_tz) if convert_to_utc else self.end).isoformat(' ')
+
+        return "<%s: [%s, %s)>" % (type(self), start, end,)
 
     def intervals(self, interval_length: timedelta, limit_by_end=True):
         """
         see time_intervals_between for argument info
         """
+        if self.is_infinite:
+            # TODO correct exception type
+            raise ValueError("cannot iterate over infinite interval")
         return time_intervals_between(self.start, self.end, interval_length, limit_by_end)
 
 
