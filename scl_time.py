@@ -4,8 +4,8 @@ from pytz import utc as utc_tz
 
 __author__ = 'Scott Lessans'
 
-DATE_TIME_MIN = datetime.max.astimezone(tz=utc_tz)
-DATE_TIME_MAX = datetime.max.astimezone(tz=utc_tz)
+DATE_TIME_MIN = datetime.min.replace(tzinfo=utc_tz)
+DATE_TIME_MAX = datetime.max.replace(tzinfo=utc_tz)
 
 
 def beginning_of_day(dt: datetime) -> datetime:
