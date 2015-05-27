@@ -242,9 +242,12 @@ class DateTimeInterval(object):
         return self.start == other.start and self.end == other.end
 
     def __str__(self, *args, **kwargs):
-        return self.debug_str(False)
+        return self.time_range_str(convert_to_utc=False)
 
-    def debug_str(self, convert_to_utc=True):
+    def __repr__(self):
+        return self.debug_str(convert_to_utc=True)
+
+    def time_range_str(self, convert_to_utc=False):
         if self.is_start_infinite:
             start = '-inf'
         else:
@@ -255,7 +258,10 @@ class DateTimeInterval(object):
         else:
             end = (self.end.astimezone(utc_tz) if convert_to_utc else self.end).isoformat(' ')
 
-        return "<%s: [%s, %s)>" % (type(self), start, end,)
+        return "[%s, %s)" % (start, end,)
+
+    def debug_str(self, convert_to_utc=True):
+        return "<%s: %s>" % (type(self), self.time_range_str(convert_to_utc=convert_to_utc),)
 
     def intervals(self, interval_length: timedelta, limit_by_end=True):
         """
